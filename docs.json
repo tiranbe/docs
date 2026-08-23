@@ -44,7 +44,8 @@
         "group": "External API",
         "icon": "plug",
         "pages": [
-          "external-api/overview"
+          "external-api/overview",
+          "external-api/endpoints"
         ]
       }
     ]
