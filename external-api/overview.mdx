@@ -1,0 +1,71 @@
+---
+title: "Overview"
+description: "Authenticate and integrate with the CXR Cloud external API."
+---
+
+# External API Overview
+
+CXR Cloud exposes partner-facing endpoints for creating customers, accounts, invoices, orders, branches, lookup values, currency rates, products, and operational reports.
+
+All external endpoints are protected with an owner API key and return a consistent JSON response envelope.
+
+## Base URL
+
+Use the CXR Cloud environment URL provided for your tenant.
+
+```text
+https://YOUR-ENVIRONMENT-HOST/api
+```
+
+Some endpoints include an additional controller segment, such as `/api/ExternalLookupImportApi/import-lookup-lists-external`.
+
+## Authentication
+
+Send the API key in the `X-API-KEY` request header.
+
+```http
+X-API-KEY: <your-api-key>
+Content-Type: application/json
+```
+
+The key must match an active owner secret key, and External API access must be enabled for the owner account.
+
+If authentication fails, the API returns `401 Unauthorized`:
+
+```json
+{
+  "Message": "API key is not matching",
+  "Success": false,
+  "Data": null
+}
+```
+
+## Response Envelope
+
+Most endpoints return:
+
+```json
+{
+  "Message": "Success",
+  "Success": true,
+  "Data": {}
+}
+```
+
+`Data` changes by endpoint. Validation errors may return a plain `400 Bad Request` string or an envelope with `Success: false`.
+
+## Common Status Codes
+
+| Status | Meaning |
+| --- | --- |
+| `200 OK` | Request completed successfully. |
+| `201 Created` | Resource or import request was accepted and created. |
+| `400 Bad Request` | Payload validation failed or the request cannot be processed. |
+| `401 Unauthorized` | Missing, invalid, deleted, or disabled API key. |
+| `500 Internal Server Error` | Server-side failure. |
+
+## Customer Identifiers
+
+Many endpoints use the external `customer_id` supplied when creating an individual or company profile. CXR Cloud validates that value against existing individual and company records for the authenticated owner.
+
+Responses can include both external IDs and CXR-generated IDs, for example `cxr_customer_id`, `account_id`, `booking_id`, or `invoiceExtId`.

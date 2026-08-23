@@ -1,0 +1,142 @@
+---
+title: "Endpoints"
+description: "Routes, request models, and response details for CXR Cloud external APIs."
+---
+
+# External API Endpoints
+
+All endpoints require the `X-API-KEY` header.
+
+## Profiles
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/create-customer-profile` | Create an individual customer profile. |
+| `POST` | `/api/create-company-profile` | Create a company customer profile. |
+| `POST` | `/api/create-wire-template` | Create a wire template for an existing customer. |
+| `POST` | `/api/create-link-external` | Create an external customer link. |
+
+### Create Individual Customer
+
+Required fields: `customer_id`, `first_name`, and `last_name`.
+
+Optional fields include `gender`, `date_of_birth`, `nationality`, `country_of_residence`, `job_position`, `email`, `phone`, `occupation`, `company_name`, `unicode_name`, `ssn`, `external_profile_created_date`, `document_details`, and `address`.
+
+`document_details.file_url` may contain a PNG base64 data URL. The response includes the submitted profile fields plus `cxr_customer_id`.
+
+### Create Company Customer
+
+Required fields: `customer_id`, `company_name`.
+
+Optional fields include `incorporation_number`, `incorporation_date`, `registration_state_province`, `email`, `country`, `msb_registration_number`, `msb_registration_date`, `work_phone`, `work_fax`, `nature_of_business`, `is_msbs`, `is_bank`, `is_wholesaler`, and `external_profile_created_date`.
+
+### Create Wire Template
+
+Required fields: `customer_id`, `wire_template_name`, `account_number_iban`.
+
+The customer must already exist. The response has `WireTemplateID`, `WireTemplateExtID`, `CustomerName`, and `Message`.
+
+### Create Link
+
+Required field: `external_id`. Optional fields include `customer_id`, names, date of birth, country, nationality, occupation, relationship, company details, contact details, and account/company flags.
+
+## Accounts And Lookups
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/create-main-account-external` | Create a main account. |
+| `POST` | `/api/create-account-external` | Create an account under a main account. |
+| `POST` | `/api/create-lookup-option-external` | Create one lookup option. |
+| `POST` | `/api/ExternalLookupImportApi/import-lookup-lists-external` | Bulk import lookup lists. |
+| `POST` | `/api/create-industry-external` | Create an industry code. |
+| `POST` | `/api/create-occupation-external` | Create an occupation code. |
+
+### Create Main Account
+
+Required fields: `external_id`, `main_account_name`.
+
+Optional fields: `main_account_code`, `main_account_type`, `description`, `is_debit`, `is_flagged`.
+
+Response fields: `main_account_id`, `main_account_ext_id`, `external_id`, `message`.
+
+### Create Account
+
+Required fields: `external_id`, `account_name`, `main_account_ext_id`, `currency`.
+
+Optional fields include `account_code`, `pl_group`, `description`, `customer_id`, and flags such as `is_bank`, `is_cash`, `is_eft`, `is_inventory_or_trades`, `is_pending_account`, `is_settlement_account`, `is_exclude_from_pl`, `is_prevent_walkin_customer`, and `is_display_as_dd_invoice`.
+
+### Import Lookup Lists
+
+Request fields:
+
+| Field | Type | Notes |
+| --- | --- | --- |
+| `ownerCode` | string | Owner code from the source system. |
+| `purposeOfTransactions` | array | Items with `id` and `name`. |
+| `sourceOfFunds` | array | Items with `id` and `name`. |
+
+The response includes `totalImported` and `message`.
+
+## Branches, Currency, Products, And Reports
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/create-branches-external` | Create one or more branches. |
+| `POST` | `/api/create-currency-external` | Create or update a currency rate configuration. |
+| `GET` | `/api/currency/auto-update` | Run automatic currency rate update. |
+| `POST` | `/api/get-products-list-by-category` | Return products in a category. |
+| `POST` | `/api/get-balances-by-till` | Return till balances for a date range. |
+| `GET` | `/api/sanctionlist/auto-check` | Run external sanction auto-check. |
+
+### Create Branches
+
+The body contains a non-empty `branches` array. Each branch requires `branch_code` and `branch_name`.
+
+### Create Currency
+
+Required fields: `currency_alias`, `from_currency`, `to_currency`.
+
+Optional fields include rates, rounding settings, manual-rate flags, `auto_update`, `is_active`, `is_favorite`, and `branch_codes`. Empty or omitted `branch_codes` applies the rate to all branches.
+
+### Get Products By Category
+
+Required field: `category`.
+
+Each returned product may contain `product_id`, `product_code`, `product_name`, `description`, `category_name`, `currency`, `unit`, prices, available quantity, product flags, and image fields.
+
+### Get Balances By Till
+
+Request fields: `from_date`, `to_date`, `owner_code`. Response `Data` is a string produced by the till report service.
+
+## Orders
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `GET` | `/api/currencies` | Return order currencies for the owner. |
+| `POST` | `/api/create-order` | Create or update an external order. |
+| `GET` or `PUT` | `/api/retrieve-order?order_id={order_id}` | Retrieve an order. |
+| `POST` | `/api/upload-currencies` | Upload order currency configuration. |
+
+### Create Order
+
+Top-level fields: `order_id`, `owner_code`, `total_charge`, `customer`, `currencies`, `delivery`, `payment`.
+
+Order-currency values such as quantity, rates, and charge must be non-negative when supplied. The response includes `cxr_order_id`, `cxr_invoice_id`, `status`, and `status_message`.
+
+## Invoices
+
+| Method | Path | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/create-invoice-external` | Import one or more balanced invoices. |
+| `POST` | `/api/create-transfer-invoice-external/{invoiceId}` | Create a transfer invoice shell. |
+| `POST` | `/api/amend-transfer-invoice-external/{invoiceId}` | Append transfer rows. |
+
+### Create Invoice
+
+The body contains an `invoices` array. Each invoice requires at least two `registers`; total `creditAmountLc` must equal total `debitAmountLc`.
+
+Invoice fields include `invoiceId`, `invoiceDate`, `invoiceType`, `branchId`, `customerId`, `sourceOfFunds`, `purposeOfTransaction`, `printableNotes`, and `registers`.
+
+### Transfer Invoices
+
+Create requests use `branchId`, `userId`, `customerId`, and `date`. Amend requests include a `transferRows` array; each row identifies source and destination accounts, currency, amount, references, dates, and comments.

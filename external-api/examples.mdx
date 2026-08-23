@@ -1,0 +1,210 @@
+---
+title: "Examples"
+description: "Example requests for common CXR Cloud external API workflows."
+---
+
+# External API Examples
+
+Replace `https://YOUR-ENVIRONMENT-HOST` and `<your-api-key>` with your environment URL and owner API key.
+
+## Create An Individual Customer
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-customer-profile" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "customer_id": "EXT-CUST-1001",
+    "first_name": "Ava",
+    "last_name": "Patel",
+    "date_of_birth": "1990-04-18",
+    "email": "ava.patel@example.com",
+    "phone": "+1-555-0100",
+    "address": {
+      "street": "100 Main Street",
+      "city": "Toronto",
+      "state": "ON",
+      "country": "CA",
+      "zip_code": "M5V 1A1"
+    }
+  }'
+```
+
+## Create A Main Account
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-main-account-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "external_id": "MAIN-CASH",
+    "main_account_name": "Cash",
+    "main_account_code": "1000",
+    "main_account_type": "Asset",
+    "is_debit": true
+  }'
+```
+
+## Create An Account
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-account-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "external_id": "CAD-CASH-001",
+    "account_name": "CAD Cash Account",
+    "main_account_ext_id": "MAIN-CASH",
+    "currency": "CAD",
+    "account_code": "1000-CAD",
+    "is_cash": true
+  }'
+```
+
+## Create A Currency Rate
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-currency-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "currency_alias": "USD/CAD",
+    "from_currency": "USD",
+    "to_currency": "CAD",
+    "buy_rate": 1.34,
+    "sell_rate": 1.38,
+    "market_rate": 1.36,
+    "is_buy_rate_manual": true,
+    "is_sell_rate_manual": true,
+    "auto_update": false,
+    "is_active": true,
+    "branch_codes": ["TOR", "VAN"]
+  }'
+```
+
+## Create A Branch
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-branches-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "branches": [{
+      "branch_code": "TOR",
+      "branch_name": "Toronto",
+      "country": "CA",
+      "city": "Toronto",
+      "state_province": "ON",
+      "is_active": true,
+      "time_zone": "America/Toronto",
+      "time_offset": -5
+    }]
+  }'
+```
+
+## Create An Order
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-order" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "order_id": "ORDER-5001",
+    "owner_code": "OWNER",
+    "total_charge": 12.50,
+    "customer": {
+      "customer_id": "EXT-CUST-1001",
+      "email": "ava.patel@example.com",
+      "first_name": "Ava",
+      "last_name": "Patel"
+    },
+    "currencies": [{
+      "currency_code": "USD",
+      "quantity": 100,
+      "direct_rate": 1.34,
+      "inverse_rate": 0.746,
+      "charge": 5
+    }],
+    "delivery": { "service": "pickup", "name": "Ava Patel", "charge": 0 },
+    "payment": {
+      "charge": 12.50,
+      "card": { "type": "visa", "masked": "************4242", "transaction_id": "txn_123" }
+    }
+  }'
+```
+
+## Retrieve An Order
+
+```bash
+curl -X GET "https://YOUR-ENVIRONMENT-HOST/api/retrieve-order?order_id=ORDER-5001" \
+  -H "X-API-KEY: <your-api-key>"
+```
+
+## Create A Balanced Invoice
+
+Each invoice must have at least two registers. Total `creditAmountLc` must equal total `debitAmountLc`.
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/create-invoice-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "invoices": [{
+      "invoiceId": "INV-9001",
+      "invoiceDate": "2026-08-23",
+      "invoiceType": "Cash",
+      "branchId": "TOR",
+      "customerId": "EXT-CUST-1001",
+      "registers": [
+        {
+          "methodOfPayment": "Cash",
+          "type": "Debit",
+          "accountId": "CAD-CASH-001",
+          "currency": "CAD",
+          "rate": 1,
+          "inAmount": 100,
+          "creditAmountLc": 0,
+          "debitAmountLc": 100
+        },
+        {
+          "methodOfPayment": "Cash",
+          "type": "Credit",
+          "accountId": "USD-CASH-001",
+          "currency": "USD",
+          "rate": 1.34,
+          "outAmount": 74.63,
+          "creditAmountLc": 100,
+          "debitAmountLc": 0
+        }
+      ]
+    }]
+  }'
+```
+
+## Product Lookup
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/get-products-list-by-category" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{ "category": "Gold" }'
+```
+
+## Import Lookup Lists
+
+```bash
+curl -X POST "https://YOUR-ENVIRONMENT-HOST/api/ExternalLookupImportApi/import-lookup-lists-external" \
+  -H "Content-Type: application/json" \
+  -H "X-API-KEY: <your-api-key>" \
+  -d '{
+    "ownerCode": "OWNER",
+    "purposeOfTransactions": [
+      { "id": 1, "name": "Travel" },
+      { "id": 2, "name": "Family support" }
+    ],
+    "sourceOfFunds": [
+      { "id": 10, "name": "Salary" },
+      { "id": 11, "name": "Business income" }
+    ]
+  }'
+```
